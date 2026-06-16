@@ -64,24 +64,28 @@ func (d *Daemon) processBatch(ctx context.Context) {
 }
 
 func (d *Daemon) processJobSafe(ctx context.Context, job domain.Job) {
+	// Use a background context for cleanup operations so they succeed even if main ctx is canceled
+	cleanupCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	defer func() {
 		if r := recover(); r != nil {
 			errPayload := fmt.Sprintf("panic: %v", r)
 			log.Printf("Panic processing job %d: %v", job.ID, r)
-			_ = d.queue.Fail(ctx, job.ID, errPayload)
+			_ = d.queue.Fail(cleanupCtx, job.ID, errPayload)
 		}
 	}()
 
 	txFn, err := d.dispatcher.Dispatch(ctx, job)
 	if err != nil {
 		log.Printf("Job %d failed: %v", job.ID, err)
-		_ = d.queue.Fail(ctx, job.ID, err.Error())
+		_ = d.queue.Fail(cleanupCtx, job.ID, err.Error())
 		return
 	}
 
-	err = d.queue.Complete(ctx, job.ID, txFn)
+	err = d.queue.Complete(cleanupCtx, job.ID, txFn)
 	if err != nil {
 		log.Printf("Failed to complete job %d: %v", job.ID, err)
-		_ = d.queue.Fail(ctx, job.ID, fmt.Sprintf("completion error: %v", err))
+		_ = d.queue.Fail(cleanupCtx, job.ID, fmt.Sprintf("completion error: %v", err))
 	}
 }
