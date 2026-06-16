@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	litellm "github.com/andrejsstepanovs/go-litellm/client"
 	"github.com/andrejsstepanovs/go-litellm/models"
@@ -38,12 +39,6 @@ func (c *LitellmClient) Complete(ctx context.Context, req domain.CompletionReque
 	}
 
 	lReq := request.NewCompletionRequest(modelMeta, msgs, nil, nil, req.Temperature)
-	// MaxTokens is passed directly or needs to be set differently.
-	// Since NewCompletionRequest doesn't accept max tokens and struct doesn't have it exposed directly,
-	// wait, `request.NewCompletionRequest` does not expose `MaxTokens`? 
-	// The struct returned is a generic request. Let's see if we can set it, or just omit if not supported.
-	// Let's omit it for now if it's not exposed, or just rely on defaults.
-
 
 	if req.ResponseFormat != nil && req.ResponseFormat.Type == "json_schema" {
 		var schemaMap map[string]interface{}
@@ -56,15 +51,39 @@ func (c *LitellmClient) Complete(ctx context.Context, req domain.CompletionReque
 		}
 	}
 
-	resp, err := c.client.Completion(ctx, lReq)
-	if err != nil {
-		return nil, mapError(err)
+	// Exponential backoff retry
+	maxRetries := 3
+	backoff := 1 * time.Second
+
+	var lastErr error
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		resp, err := c.client.Completion(ctx, lReq)
+		if err == nil {
+			choice := resp.Choice()
+			return &domain.CompletionResponse{
+				Text: choice.Message.Content,
+			}, nil
+		}
+
+		lastErr = mapError(err)
+		// Don't retry on Auth or Context errors
+		if lastErr == domain.ErrAuthRotation || lastErr == domain.ErrContextOverflow {
+			return nil, lastErr
+		}
+
+		if attempt == maxRetries {
+			break
+		}
+
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(backoff):
+			backoff *= 2
+		}
 	}
 
-	choice := resp.Choice()
-	return &domain.CompletionResponse{
-		Text: choice.Message.Content,
-	}, nil
+	return nil, lastErr
 }
 
 func mapError(err error) error {

@@ -1,0 +1,8 @@
+version: '3.8'
+
+services:
+  mock-llm:
+    image: alpine/socat
+    command: tcp-listen:4000,fork,reuseaddr system:'echo -e "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"status\\\":\\\"mock_success\\\"}\"}}]}"'
+    ports:
+      - "4000:4000"
