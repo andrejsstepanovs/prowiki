@@ -29,3 +29,22 @@ func (s *FeatureStore) AddToFileVersion(ctx context.Context, fileVersionID int64
 	_, err := s.db.ExecContext(ctx, query, fileVersionID, featureID)
 	return err
 }
+
+func (s *FeatureStore) GetByProjectID(ctx context.Context, projectID int64) ([]domain.Feature, error) {
+	query := `SELECT id, project_id, name, description, created_at, updated_at FROM features WHERE project_id = ? ORDER BY created_at DESC`
+	rows, err := s.db.QueryContext(ctx, query, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var features []domain.Feature
+	for rows.Next() {
+		var f domain.Feature
+		if err := rows.Scan(&f.ID, &f.ProjectID, &f.Name, &f.Description, &f.CreatedAt, &f.UpdatedAt); err != nil {
+			return nil, err
+		}
+		features = append(features, f)
+	}
+	return features, rows.Err()
+}

@@ -74,3 +74,39 @@ func (s *JobStore) EnqueueMany(ctx context.Context, jobs []domain.Job) error {
 	_, err := s.db.ExecContext(ctx, query, args...)
 	return err
 }
+
+type JobStats struct {
+	Pending    int `json:"pending"`
+	Processing int `json:"processing"`
+	Completed  int `json:"completed"`
+	Failed     int `json:"failed"`
+}
+
+func (s *JobStore) GetStats(ctx context.Context, projectID int64) (JobStats, error) {
+	query := `SELECT status, count(*) FROM job_queue WHERE project_id = ? GROUP BY status`
+	rows, err := s.db.QueryContext(ctx, query, projectID)
+	if err != nil {
+		return JobStats{}, err
+	}
+	defer rows.Close()
+
+	var stats JobStats
+	for rows.Next() {
+		var status string
+		var count int
+		if err := rows.Scan(&status, &count); err != nil {
+			return JobStats{}, err
+		}
+		switch domain.JobStatus(status) {
+		case domain.JobStatusPending:
+			stats.Pending = count
+		case domain.JobStatusProcessing:
+			stats.Processing = count
+		case domain.JobStatusCompleted:
+			stats.Completed = count
+		case domain.JobStatusFailed:
+			stats.Failed = count
+		}
+	}
+	return stats, rows.Err()
+}

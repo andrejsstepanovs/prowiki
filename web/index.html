@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProWiki | Code Intelligence</title>
+    <link rel="stylesheet" href="/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar glass-panel">
+            <div class="brand">
+                <div class="logo-glow"></div>
+                <h1>ProWiki</h1>
+            </div>
+            
+            <div class="nav-section">
+                <h3>PROJECT</h3>
+                <div id="project-name" class="skeleton-text">Loading...</div>
+            </div>
+
+            <div class="nav-section">
+                <h3>STATUS</h3>
+                <div class="status-grid">
+                    <div class="status-card">
+                        <span class="label">Pending</span>
+                        <span id="stat-pending" class="value">0</span>
+                    </div>
+                    <div class="status-card">
+                        <span class="label">Processing</span>
+                        <span id="stat-processing" class="value text-glow">0</span>
+                    </div>
+                    <div class="status-card">
+                        <span class="label">Completed</span>
+                        <span id="stat-completed" class="value text-success">0</span>
+                    </div>
+                    <div class="status-card">
+                        <span class="label">Failed</span>
+                        <span id="stat-failed" class="value text-danger">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="nav-section flex-grow">
+                <h3>FILES</h3>
+                <div id="file-list" class="file-list">
+                    <!-- Files will be injected here -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="topbar glass-panel">
+                <h2 id="current-file-path">Select a file</h2>
+            </header>
+
+            <div class="content-grid">
+                <!-- Left column: Summary & Features -->
+                <div class="intel-panel glass-panel">
+                    <section class="summary-section">
+                        <h3><span class="icon">✨</span> AI Summary</h3>
+                        <p id="file-summary" class="placeholder-text">Click a file to view its extracted intelligence.</p>
+                    </section>
+
+                    <section class="features-section">
+                        <h3><span class="icon">⚡</span> Extracted Features</h3>
+                        <div id="feature-list" class="feature-cards">
+                            <!-- Features will be injected here -->
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Right column: Raw Code/Details (Placeholder for future) -->
+                <div class="code-panel glass-panel">
+                     <div class="empty-state">
+                        <div class="pulse-ring"></div>
+                        <p>Awaiting selection...</p>
+                     </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="/app.js"></script>
+</body>
+</html>

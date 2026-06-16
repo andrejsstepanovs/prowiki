@@ -60,6 +60,11 @@ func main() {
 			fmt.Println(err)
 			os.Exit(1)
 		}
+	case "server":
+		if err := runServer(ctx, absDir); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 	default:
 		printUsage()
 		os.Exit(1)
@@ -72,7 +77,8 @@ func printUsage() {
 Usage:
   prowiki init [path]    - Initialize the database (.prowiki.db)
   prowiki ingest [path]  - Run the ingestion scanner
-  prowiki daemon [path]  - Start the background queue worker`)
+  prowiki daemon [path]  - Start the background queue worker
+  prowiki server [path]  - Start the web dashboard and API`)
 }
 
 func runInit(dir string) error {
@@ -116,4 +122,15 @@ func runDaemon(ctx context.Context, dir string) error {
 	fmt.Printf("Starting ProWiki daemon in %s...\n", dir)
 	c.Daemon.Start(ctx) // Blocks until ctx is canceled
 	return nil
+}
+
+func runServer(ctx context.Context, dir string) error {
+	c, err := di.NewContainer(ctx, dir)
+	if err != nil {
+		return err
+	}
+	defer c.DB.Close()
+
+	fmt.Printf("Starting ProWiki server in %s...\n", dir)
+	return c.Server.Start(ctx)
 }

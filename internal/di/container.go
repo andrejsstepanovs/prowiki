@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/andrejsstepanovs/prowiki/internal/api"
 	"github.com/andrejsstepanovs/prowiki/internal/ast"
 	"github.com/andrejsstepanovs/prowiki/internal/db"
 	"github.com/andrejsstepanovs/prowiki/internal/domain"
@@ -30,6 +31,7 @@ type Container struct {
 	Completer        domain.Completer
 	IngestionService *versioning.IngestionService
 	Daemon           *worker.Daemon
+	Server           *api.Server
 	Project          *domain.Project
 }
 
@@ -92,11 +94,14 @@ func NewContainer(ctx context.Context, projectRoot string) (*Container, error) {
 	sqliteQueue := queue.NewSQLiteQueue(database, jStore, dlqStore)
 	daemon := worker.NewDaemon(sqliteQueue, dispatcher, 2*time.Second)
 
+	apiServer := api.NewServer(8080, &project, pStore, fStore, vStore, featStore, jStore)
+
 	return &Container{
 		DB:               database,
 		Completer:        completer,
 		IngestionService: ingestionService,
 		Daemon:           daemon,
+		Server:           apiServer,
 		Project:          &project,
 	}, nil
 }

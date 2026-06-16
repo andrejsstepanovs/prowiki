@@ -25,6 +25,25 @@ func (s *FileStore) Create(ctx context.Context, file *domain.File) error {
 	return err
 }
 
+func (s *FileStore) GetByProjectID(ctx context.Context, projectID int64) ([]domain.File, error) {
+	query := `SELECT id, project_id, folder_id, path, created_at, updated_at FROM files WHERE project_id = ? ORDER BY path ASC`
+	rows, err := s.db.QueryContext(ctx, query, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var files []domain.File
+	for rows.Next() {
+		var f domain.File
+		if err := rows.Scan(&f.ID, &f.ProjectID, &f.FolderID, &f.Path, &f.CreatedAt, &f.UpdatedAt); err != nil {
+			return nil, err
+		}
+		files = append(files, f)
+	}
+	return files, rows.Err()
+}
+
 type FileVersionStore struct {
 	db DBTx
 }
