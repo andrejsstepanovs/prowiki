@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"prowiki/internal/cli"
+	"github.com/andrejsstepanovs/prowiki/internal/cli"
 )
 
 func main() {
