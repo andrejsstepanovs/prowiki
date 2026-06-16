@@ -53,7 +53,7 @@ func (r *HardcodedRegistry) Render(tmpl domain.PromptTemplate, vars map[string]a
 
 	var buf bytes.Buffer
 	if err := t.Execute(&buf, vars); err != nil {
-		return "", fmt.Errorf("failed to render template: %w", err)
+		return "", fmt.Errorf("failed to render template %q: %w", tmpl.Stage, err)
 	}
 
 	return buf.String(), nil

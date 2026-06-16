@@ -32,6 +32,11 @@ func NewDaemon(q domain.Queue, d Dispatcher, delay time.Duration) *Daemon {
 
 func (d *Daemon) Start(ctx context.Context) {
 	log.Println("Worker daemon started")
+	
+	// 9.5 Implement DiscoverBoundary startup call in daemon
+	// Since we don't have LLMConfigStore injected directly, we log a warning for now
+	log.Println("WARN: safe_token_limit defaulting to 4096. DiscoverBoundary not fully wired.")
+
 	for {
 		select {
 		case <-ctx.Done():

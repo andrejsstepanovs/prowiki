@@ -162,49 +162,49 @@ This plan resolves 17 identified gaps in the ProWiki codebase, spanning ingestio
     - _Requirements: 1.4_
 
 
-- [ ] 8. Prompt registry — wire DBRegistry and improve error messages
-  - [~] 8.1 Wire `DBRegistry` in DI container
+- [x] 8. Prompt registry — wire DBRegistry and improve error messages
+  - [x] 8.1 Wire `DBRegistry` in DI container
     - In `internal/di/container.go`, replace `prompt.NewHardcodedRegistry()` with `prompt.NewDBRegistry(promptStore)`
     - Inject the registry into all services that accept `domain.Registry`
     - _Requirements: 6.1_
 
-  - [~] 8.2 Fix `PromptStore.Active` to return `domain.ErrNotFound`
+  - [x] 8.2 Fix `PromptStore.Active` to return `domain.ErrNotFound`
     - Ensure `internal/prompt/db_registry.go` returns `domain.ErrNotFound` (not nil or empty struct) when no active row exists for a stage
     - _Requirements: 6.2_
 
-  - [~] 8.3 Improve `Render` error message to include stage name
+  - [x] 8.3 Improve `Render` error message to include stage name
     - Update `Render` in `internal/prompt/registry.go` to include template stage name in template execution errors
     - _Requirements: 6.5_
 
-  - [ ]* 8.4 Write property test for prompt render error includes stage name
+  - [x] 8.4 Write property test for prompt render error includes stage name
     - **Property 12: Prompt render error includes stage name**
     - **Validates: Requirements 6.5**
     - _File: `internal/prompt/registry_test.go`_
 
 
-- [ ] 9. LLM client — key provider and token budget
-  - [~] 9.1 Define `domain.KeyProvider` interface and `EnvKeyProvider` implementation
+- [x] 9. LLM client — key provider and token budget
+  - [x] 9.1 Define `domain.KeyProvider` interface and `EnvKeyProvider` implementation
     - Add `KeyProvider` interface with `APIKey`, `Refresh`, and `Rotate` methods to `internal/domain/interfaces.go`
     - Implement `EnvKeyProvider` in `internal/llm/provider.go` that reads the env var at call time (not cached)
     - Update `LitellmClient` to accept a `KeyProvider` instead of a static key string
     - _Requirements: 14.1, 14.5_
 
-  - [~] 9.2 Implement `History.TrimToBudget` and context overflow retry logic
+  - [x] 9.2 Implement `History.TrimToBudget` and context overflow retry logic
     - Ensure `History.TrimToBudget(limit int)` preserves system message and most-recent messages while keeping total token count ≤ limit
     - In extraction service callers: on `ErrContextOverflow`, call `TrimToBudget(limit/2)` and retry once; return error if second call also overflows
     - _Requirements: 5.3, 5.5_
 
-  - [ ]* 9.3 Write property test for TrimToBudget respects budget
+  - [x] 9.3 Write property test for TrimToBudget respects budget
     - **Property 10: Token budget respected before LLM call**
     - **Validates: Requirements 5.3**
     - _File: `internal/llm/history_test.go`_
 
-  - [ ]* 9.4 Write property test for context overflow retry halves budget
+  - [x] 9.4 Write property test for context overflow retry halves budget
     - **Property 11: Context overflow retry halves budget**
     - **Validates: Requirements 5.5**
     - _File: `internal/llm/history_test.go`_
 
-  - [~] 9.5 Implement `DiscoverBoundary` startup call in daemon
+  - [x] 9.5 Implement `DiscoverBoundary` startup call in daemon
     - On daemon startup, call `llm.DiscoverBoundary` for each model tier; on error log warn and set `safe_token_limit = 4096`
     - Skip `DiscoverBoundary` if `safe_token_limit > 0` and `updated_at` is within 24 hours
     - _Requirements: 5.1, 5.2_

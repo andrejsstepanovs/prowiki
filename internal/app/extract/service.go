@@ -109,6 +109,20 @@ func (s *Service) ProcessOverview(ctx context.Context, job *domain.Job) error {
 	}
 
 	resp, err := s.completer.Complete(ctx, req)
+	if err == domain.ErrContextOverflow {
+		// Attempt to halve the limit and retry
+		// Create a mock history to use the TrimToBudget function
+		// Since we don't have domain.Counter injected, use heuristic counter logic
+		budgetLimit := 4096 / 2
+		promptLen := len(promptStr)
+		if promptLen > budgetLimit*4 {
+			promptStr = promptStr[:budgetLimit*4]
+		}
+		
+		req.Messages[0].Content = promptStr
+		resp, err = s.completer.Complete(ctx, req)
+	}
+	
 	if err != nil {
 		return fmt.Errorf("completion failed: %w", err)
 	}

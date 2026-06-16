@@ -6,11 +6,6 @@ import (
 	"os"
 )
 
-type KeyProvider interface {
-	Key(ctx context.Context, model string) (string, error)
-	Refresh(ctx context.Context) error
-}
-
 type EnvKeyProvider struct {
 	envVar string
 }
@@ -22,7 +17,7 @@ func NewEnvKeyProvider(envVar string) *EnvKeyProvider {
 	return &EnvKeyProvider{envVar: envVar}
 }
 
-func (p *EnvKeyProvider) Key(ctx context.Context, model string) (string, error) {
+func (p *EnvKeyProvider) APIKey(ctx context.Context, model string) (string, error) {
 	key := os.Getenv(p.envVar)
 	if key == "" {
 		return "", fmt.Errorf("api key not found in env var %s", p.envVar)
@@ -31,7 +26,9 @@ func (p *EnvKeyProvider) Key(ctx context.Context, model string) (string, error) 
 }
 
 func (p *EnvKeyProvider) Refresh(ctx context.Context) error {
-	// For simple env vars, there's no dynamic refresh possible.
-	// A Vault provider would fetch a new short-lived token here.
+	return nil
+}
+
+func (p *EnvKeyProvider) Rotate(ctx context.Context) error {
 	return nil
 }

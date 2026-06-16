@@ -34,6 +34,12 @@ type Completer interface {
 	Complete(ctx context.Context, req CompletionRequest) (*CompletionResponse, error)
 }
 
+type KeyProvider interface {
+	APIKey(ctx context.Context, model string) (string, error)
+	Refresh(ctx context.Context) error
+	Rotate(ctx context.Context) error
+}
+
 // tokenizer
 
 type Counter interface {

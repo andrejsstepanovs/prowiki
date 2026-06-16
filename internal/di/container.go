@@ -4,8 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"net/url"
-	"os"
 	"path/filepath"
 	"time"
 
@@ -21,9 +19,6 @@ import (
 	"github.com/andrejsstepanovs/prowiki/internal/app/ingest"
 	"github.com/andrejsstepanovs/prowiki/internal/store"
 	"github.com/andrejsstepanovs/prowiki/internal/worker"
-
-	go_litellm "github.com/andrejsstepanovs/go-litellm/client"
-	"github.com/andrejsstepanovs/go-litellm/conf/connections/litellm"
 )
 
 type Container struct {
@@ -63,31 +58,19 @@ func NewContainer(ctx context.Context, projectRoot string) (*Container, error) {
 		}
 	}
 
-	apiKey := os.Getenv("OPENAI_API_KEY")
-	if apiKey == "" {
-		fmt.Println("WARN: OPENAI_API_KEY is not set. LLM features will fail.")
-	}
+	keyProvider := llm.NewEnvKeyProvider("OPENAI_API_KEY")
 
-	baseURL, _ := url.Parse("https://api.openai.com/v1")
-	conn := litellm.Connection{
-		URL: *baseURL,
-	}
-	cfg := go_litellm.Config{
-		APIKey:      apiKey,
-		Temperature: 0.1,
-	}
-	llmClient, err := go_litellm.New(cfg, conn)
-	if err != nil {
-		fmt.Printf("failed to create litellm client: %v\n", err)
-	}
-	completer := llm.NewClient(llmClient)
+	baseURL := "https://api.openai.com/v1"
+	completer := llm.NewClient(keyProvider, baseURL)
 
 	walker := scanner.NewDefaultWalker()
 	parser := ast.NewHeuristicParser()
 
 	ingestionService := ingest.NewService(database, walker, parser, fStore, vStore, jStore, project.ID, projectRoot)
 
-	registry := prompt.NewHardcodedRegistry()
+	promptStore := store.NewPromptStore(database)
+
+	registry := prompt.NewDBRegistry(promptStore)
 	parseHandler := handlers.NewParseHandler(completer, registry, vStore, featStore, jStore)
 	dispatcher := handlers.NewDispatcher(parseHandler.Handle)
 

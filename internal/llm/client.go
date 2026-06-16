@@ -4,25 +4,48 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
-	litellm "github.com/andrejsstepanovs/go-litellm/client"
+	go_litellm "github.com/andrejsstepanovs/go-litellm/client"
+	"github.com/andrejsstepanovs/go-litellm/conf/connections/litellm"
 	"github.com/andrejsstepanovs/go-litellm/models"
 	"github.com/andrejsstepanovs/go-litellm/request"
 	"github.com/andrejsstepanovs/prowiki/internal/domain"
 )
 
 type LitellmClient struct {
-	client *litellm.Litellm
+	provider domain.KeyProvider
+	baseURL  string
 }
 
-func NewClient(c *litellm.Litellm) *LitellmClient {
-	return &LitellmClient{client: c}
+func NewClient(provider domain.KeyProvider, baseURL string) *LitellmClient {
+	return &LitellmClient{
+		provider: provider,
+		baseURL:  baseURL,
+	}
 }
 
 func (c *LitellmClient) Complete(ctx context.Context, req domain.CompletionRequest) (*domain.CompletionResponse, error) {
-	modelMeta, err := c.client.Model(ctx, models.ModelID(req.Model))
+	apiKey, err := c.provider.APIKey(ctx, req.Model)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get api key: %w", err)
+	}
+
+	conn := litellm.Connection{
+		URL: *mustParseURL(c.baseURL),
+	}
+	cfg := go_litellm.Config{
+		APIKey:      apiKey,
+		Temperature: req.Temperature,
+	}
+	client, err := go_litellm.New(cfg, conn)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create litellm client: %w", err)
+	}
+
+	modelMeta, err := client.Model(ctx, models.ModelID(req.Model))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get model %s: %w", req.Model, err)
 	}
@@ -57,7 +80,7 @@ func (c *LitellmClient) Complete(ctx context.Context, req domain.CompletionReque
 
 	var lastErr error
 	for attempt := 0; attempt <= maxRetries; attempt++ {
-		resp, err := c.client.Completion(ctx, lReq)
+		resp, err := client.Completion(ctx, lReq)
 		if err == nil {
 			choice := resp.Choice()
 			return &domain.CompletionResponse{
@@ -104,4 +127,12 @@ func mapError(err error) error {
 	}
 
 	return err
+}
+
+func mustParseURL(s string) *url.URL {
+	u, err := url.Parse(s)
+	if err != nil {
+		panic(err)
+	}
+	return u
 }
