@@ -18,7 +18,7 @@ func TestDLQStore(t *testing.T) {
 	_ = projectStore.Create(ctx, p)
 	
 	jobs := []domain.Job{{ProjectID: p.ID, TargetID: 1, TargetType: "File", Stage: domain.StageLevel1Overview, Priority: 1}}
-	_ = jobStore.EnqueueMany(ctx, jobs)
+	_ = jobStore.EnqueueMany(ctx, nil, jobs)
 	claimed, _ := jobStore.ClaimBatch(ctx, 1)
 
 	item := &domain.DeadLetterItem{

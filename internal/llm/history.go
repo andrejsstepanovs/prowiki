@@ -27,8 +27,8 @@ func (h *History) Messages() []domain.Message {
 // is within the maxTokens limit, or until only the system message is left.
 func (h *History) TrimToBudget(maxTokens int) {
 	for len(h.messages) > 1 {
-		tokens := h.counter.CountMessages(h.messages)
-		if tokens <= maxTokens {
+		tokens, err := h.counter.CountMessages(h.messages)
+		if err != nil || tokens <= maxTokens {
 			break
 		}
 

@@ -55,7 +55,7 @@ func (s *JobStore) UpdateStatus(ctx context.Context, id int64, status domain.Job
 	return err
 }
 
-func (s *JobStore) EnqueueMany(ctx context.Context, jobs []domain.Job) error {
+func (s *JobStore) EnqueueMany(ctx context.Context, tx *sql.Tx, jobs []domain.Job) error {
 	if len(jobs) == 0 {
 		return nil
 	}
@@ -71,7 +71,25 @@ func (s *JobStore) EnqueueMany(ctx context.Context, jobs []domain.Job) error {
 		args = append(args, j.ProjectID, j.TargetID, j.TargetType, j.Stage, domain.JobStatusPending, j.Priority)
 	}
 
-	_, err := s.db.ExecContext(ctx, query, args...)
+	var execer DBTx = s.db
+	if tx != nil {
+		execer = tx
+	}
+	_, err := execer.ExecContext(ctx, query, args...)
+	return err
+}
+
+func (s *JobStore) ResetCompletedForTarget(ctx context.Context, tx *sql.Tx, oldVersionID int64) error {
+	var execer DBTx = s.db
+	if tx != nil {
+		execer = tx
+	}
+	query := `
+		UPDATE job_queue 
+		SET status = ?, priority = priority + 10, updated_at = CURRENT_TIMESTAMP 
+		WHERE target_type = 'File' AND target_id = ? AND status = ?
+	`
+	_, err := execer.ExecContext(ctx, query, domain.JobStatusPending, oldVersionID, domain.JobStatusCompleted)
 	return err
 }
 

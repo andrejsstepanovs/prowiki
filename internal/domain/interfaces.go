@@ -38,7 +38,7 @@ type Completer interface {
 
 type Counter interface {
 	Count(text string) (int, error)
-	CountMessages(msgs []Message) int
+	CountMessages(msgs []Message) (int, error)
 }
 
 // ast

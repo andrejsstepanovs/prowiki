@@ -80,6 +80,6 @@ func (q *SQLiteQueue) Fail(ctx context.Context, jobID int64, errPayload string) 
 func (q *SQLiteQueue) Enqueue(ctx context.Context, jobs ...domain.Job) error {
 	return txn.Immediate(ctx, q.db, func(tx *sql.Tx) error {
 		jTx := q.jobStore.WithTx(tx)
-		return jTx.EnqueueMany(ctx, jobs)
+		return jTx.EnqueueMany(ctx, tx, jobs)
 	})
 }

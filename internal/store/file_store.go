@@ -44,6 +44,33 @@ func (s *FileStore) GetByProjectID(ctx context.Context, projectID int64) ([]doma
 	return files, rows.Err()
 }
 
+func (s *FileStore) GetOrCreate(ctx context.Context, tx *sql.Tx, projectID int64, relPath string) (*domain.File, error) {
+	query := `SELECT id, project_id, folder_id, path, created_at, updated_at FROM files WHERE project_id = ? AND path = ?`
+	var execer DBTx = s.db
+	if tx != nil {
+		execer = tx
+	}
+	var f domain.File
+	err := execer.QueryRowContext(ctx, query, projectID, relPath).Scan(&f.ID, &f.ProjectID, &f.FolderID, &f.Path, &f.CreatedAt, &f.UpdatedAt)
+	if err == nil {
+		return &f, nil
+	}
+	if err != sql.ErrNoRows {
+		return nil, err
+	}
+
+	f = domain.File{
+		ProjectID: projectID,
+		Path:      relPath,
+	}
+	queryInsert := `INSERT INTO files (project_id, folder_id, path) VALUES (?, ?, ?) RETURNING id, created_at, updated_at`
+	err = execer.QueryRowContext(ctx, queryInsert, f.ProjectID, f.FolderID, f.Path).Scan(&f.ID, &f.CreatedAt, &f.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &f, nil
+}
+
 type FileVersionStore struct {
 	db DBTx
 }
@@ -56,9 +83,13 @@ func (s *FileVersionStore) WithTx(tx *sql.Tx) *FileVersionStore {
 	return NewFileVersionStore(tx)
 }
 
-func (s *FileVersionStore) InsertVersion(ctx context.Context, version *domain.FileVersion) error {
+func (s *FileVersionStore) InsertVersion(ctx context.Context, tx *sql.Tx, version *domain.FileVersion) error {
 	query := `INSERT INTO file_versions (file_id, content, ast_hash, is_latest) VALUES (?, ?, ?, ?) RETURNING id, created_at`
-	err := s.db.QueryRowContext(ctx, query, version.FileID, version.Content, version.AstHash, version.IsLatest).Scan(&version.ID, &version.CreatedAt)
+	var execer DBTx = s.db
+	if tx != nil {
+		execer = tx
+	}
+	err := execer.QueryRowContext(ctx, query, version.FileID, version.Content, version.AstHash, version.IsLatest).Scan(&version.ID, &version.CreatedAt)
 	return err
 }
 
@@ -76,17 +107,36 @@ func (s *FileVersionStore) LatestByFileID(ctx context.Context, fileID int64) (*d
 }
 
 // SetLatest atomically swaps the is_latest flag
-func (s *FileVersionStore) SetLatest(ctx context.Context, newVersionID int64, oldVersionID int64) error {
+func (s *FileVersionStore) SetLatest(ctx context.Context, tx *sql.Tx, newVersionID int64, oldVersionID int64) error {
+	var execer DBTx = s.db
+	if tx != nil {
+		execer = tx
+	}
 	if oldVersionID != 0 {
 		queryOld := `UPDATE file_versions SET is_latest = 0 WHERE id = ?`
-		_, err := s.db.ExecContext(ctx, queryOld, oldVersionID)
+		_, err := execer.ExecContext(ctx, queryOld, oldVersionID)
 		if err != nil {
 			return err
 		}
 	}
 
 	queryNew := `UPDATE file_versions SET is_latest = 1 WHERE id = ?`
-	_, err := s.db.ExecContext(ctx, queryNew, newVersionID)
+	_, err := execer.ExecContext(ctx, queryNew, newVersionID)
+	return err
+}
+
+func (s *FileVersionStore) CloneJunctions(ctx context.Context, tx *sql.Tx, oldVersionID, newVersionID int64) error {
+	var execer DBTx = s.db
+	if tx != nil {
+		execer = tx
+	}
+	query := `
+		INSERT INTO file_features (file_version_id, feature_id)
+		SELECT ?, feature_id
+		FROM file_features
+		WHERE file_version_id = ?
+	`
+	_, err := execer.ExecContext(ctx, query, newVersionID, oldVersionID)
 	return err
 }
 

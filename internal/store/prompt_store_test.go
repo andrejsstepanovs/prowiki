@@ -13,7 +13,7 @@ func TestPromptStore(t *testing.T) {
 	ctx := context.Background()
 
 	p := &domain.PromptTemplate{
-		Stage:    domain.StageLevel4EdgeCase,
+		Stage:    "TEST_STAGE",
 		Template: "System: You are an agent.",
 		Version:  1,
 		IsActive: true,
@@ -24,7 +24,7 @@ func TestPromptStore(t *testing.T) {
 		t.Fatalf("failed to create prompt: %v", err)
 	}
 
-	active, err := store.Active(ctx, domain.StageLevel4EdgeCase)
+	active, err := store.Active(ctx, "TEST_STAGE")
 	if err != nil {
 		t.Fatalf("failed to get active prompt: %v", err)
 	}

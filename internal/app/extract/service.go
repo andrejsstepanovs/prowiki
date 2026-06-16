@@ -2,6 +2,7 @@ package extract
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 
@@ -29,7 +30,7 @@ type FileVersionStore interface {
 }
 
 type JobStore interface {
-	EnqueueMany(ctx context.Context, jobs []domain.Job) error
+	EnqueueMany(ctx context.Context, tx *sql.Tx, jobs []domain.Job) error
 	UpdateStatus(ctx context.Context, jobID int64, status domain.JobStatus) error
 }
 
@@ -142,7 +143,7 @@ func (s *Service) ProcessOverview(ctx context.Context, job *domain.Job) error {
 		Stage:      domain.StageLevel2Entity,
 		Priority:   1,
 	}
-	if err := s.js.EnqueueMany(ctx, []domain.Job{nextJob}); err != nil {
+	if err := s.js.EnqueueMany(ctx, nil, []domain.Job{nextJob}); err != nil {
 		return err
 	}
 

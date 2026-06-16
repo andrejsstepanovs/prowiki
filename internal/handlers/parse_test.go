@@ -41,7 +41,7 @@ func TestParseHandler(t *testing.T) {
 
 	vStore := store.NewFileVersionStore(database)
 	v := &domain.FileVersion{FileID: f.ID, Content: "func main(){}", AstHash: "hash"}
-	vStore.InsertVersion(ctx, v)
+	_ = vStore.InsertVersion(ctx, nil, v)
 
 	featStore := store.NewFeatureStore(database)
 	jobStore := store.NewJobStore(database)

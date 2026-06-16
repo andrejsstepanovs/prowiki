@@ -110,7 +110,7 @@ func (h *ParseHandler) Handle(ctx context.Context, job domain.Job) (domain.TxFun
 			Stage:      "ANALYZE_STYLE",
 			Priority:   5, // lower priority
 		}
-		if err := jTx.EnqueueMany(ctx, []domain.Job{downstreamJob}); err != nil {
+		if err := jTx.EnqueueMany(ctx, tx, []domain.Job{downstreamJob}); err != nil {
 			return err
 		}
 

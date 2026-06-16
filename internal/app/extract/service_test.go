@@ -76,7 +76,7 @@ func TestProcessOverview(t *testing.T) {
 	_ = fileStore.Create(ctx, f)
 
 	fv := &domain.FileVersion{FileID: f.ID, Content: "code", IsLatest: true}
-	_ = fvs.InsertVersion(ctx, fv)
+	_ = fvs.InsertVersion(ctx, nil, fv)
 
 	job := &domain.Job{
 		ProjectID:  p.ID,
@@ -84,7 +84,7 @@ func TestProcessOverview(t *testing.T) {
 		TargetType: "File",
 		Stage:      domain.StageLevel1Overview,
 	}
-	_ = js.EnqueueMany(ctx, []domain.Job{*job})
+	_ = js.EnqueueMany(ctx, nil, []domain.Job{*job})
 
 	// we need the job id, let's claim
 	claimed, _ := js.ClaimBatch(ctx, 1)

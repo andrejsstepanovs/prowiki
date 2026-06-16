@@ -4,11 +4,17 @@ ProWiki is an intelligent, pure-Go background daemon designed to continuously sc
 
 It is completely self-contained. There are no external dependencies like Redis or RabbitMQ; the entire queue and orchestration engine runs on an embedded SQLite database (`.prowiki.db`) under a safe, single-threaded WAL connection. It is built strictly with Go (CGo-free).
 
-## Features
-- **Atomic Ingestion Pipeline**: Scans your codebase, honors `.gitignore`, and efficiently detects modifications via a structural AST hash.
-- **Background Daemon**: A panic-safe polling worker seamlessly pulls intelligence jobs from the SQLite queue.
-- **LLM Code Intelligence**: Natively calls out to the OpenAI API (via `go-litellm`) to summarize file versions and extract features dynamically into strongly-typed domains.
-- **Dead Letter Queue (DLQ)**: Built-in fault tolerance. Jobs that fail repeatedly are parked safely without crashing the orchestrator.
+## Core Architecture & Features
+
+- **AST Structural Bypass**: An intelligent ingestion scanner that reads your Go codebase, hashes the AST structures, and bypasses LLM extraction entirely if only whitespace or comments have changed.
+- **Secret Scrubber Engine**: A regex-based redaction pipeline that scrubs hardcoded API keys and secrets before code is sent to any external LLM provider.
+- **Transactional SQLite Queue**: A panic-safe polling worker seamlessly pulls jobs using atomic SQLite pointer swaps. Includes a **Dead Letter Queue (DLQ)** to safely park poison pill jobs after 3 retries without crashing.
+- **Multi-Pass Extraction**:
+  - `Level 1`: File Overview and Summarization
+  - `Level 2`: Entity Extraction (Structs, Types, Funcs)
+  - `Level 3`: Feature Architecture Graph Synthesis
+  - `Level 4`: Style Anomalies & Code Review
+- **LLM Cost Controls**: Built with an `ExponentialBackoff` retry system for `5xx` errors, and a `DiscoverBoundary` function that dynamically binary searches for maximum safe token capacity before hitting Context Limits.
 
 ## Installation
 
@@ -20,32 +26,40 @@ go build -o prowiki cmd/prowiki/main.go
 
 ## Usage
 
-ProWiki uses a command-line interface with three primary commands.
+ProWiki features a modern CLI built on `Cobra` and `Viper`. You can specify the target repository directory via the `-d` flag or the `PROWIKI_DIR` environment variable.
 
 ### 1. Initialize a Project
 
 Initialize the ProWiki database within your target directory:
 
 ```bash
-./prowiki init /path/to/your/project
+./prowiki init -d /path/to/your/project
 ```
-This command bootstraps a local `.prowiki.db` SQLite file in that directory and runs all necessary database migrations.
+This command bootstraps a local `.prowiki.db` SQLite file in that directory and runs all necessary database migrations (including seeding initial LLM prompts).
 
 ### 2. Ingest Code
 
 Run the codebase scanner to find all files and track modifications:
 
 ```bash
-./prowiki ingest /path/to/your/project
+./prowiki ingest -d /path/to/your/project
 ```
-The ingestion process will structurally hash the files and safely queue `PARSE` jobs for any changed files.
+The ingestion process will structurally hash the files and safely queue `Level 1 Overview` jobs for any changed files.
 
 ### 3. Run the Intelligence Daemon
 
-Start the background queue worker. Be sure to provide your API key to the daemon so it can run the LLM intelligence routines.
+Start the background queue worker. Be sure to provide your API key (using the `PROWIKI_` prefix) to the daemon so it can run the LLM intelligence routines.
 
 ```bash
-export OPENAI_API_KEY="your-sk-key"
-./prowiki daemon /path/to/your/project
+export PROWIKI_API_KEY="your-sk-key"
+./prowiki daemon -d /path/to/your/project
 ```
-The daemon will safely process background jobs, fetch file summaries, and automatically queue downstream feature extractions!
+The daemon will safely process background jobs, fetch file summaries, evaluate coding styles, map feature architectures, and automatically queue downstream feature extractions!
+
+### 4. Dashboard Server (Upcoming)
+
+Start the web dashboard and API (Implementation pending):
+
+```bash
+./prowiki server -d /path/to/your/project
+```

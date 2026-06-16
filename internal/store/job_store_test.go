@@ -23,7 +23,7 @@ func TestJobStore(t *testing.T) {
 		{ProjectID: p.ID, TargetID: 2, TargetType: "File", Stage: domain.StageLevel1Overview, Priority: 2},
 	}
 
-	err := jobStore.EnqueueMany(ctx, jobs)
+	err := jobStore.EnqueueMany(ctx, nil, jobs)
 	if err != nil {
 		t.Fatalf("failed to enqueue jobs: %v", err)
 	}
@@ -78,7 +78,7 @@ func TestJobStore_Concurrency(t *testing.T) {
 			Priority:   1,
 		})
 	}
-	_ = jobStore.EnqueueMany(ctx, jobs)
+	_ = jobStore.EnqueueMany(ctx, nil, jobs)
 
 	// Concurrently claim jobs using 10 goroutines
 	var wg sync.WaitGroup

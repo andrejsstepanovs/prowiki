@@ -55,7 +55,7 @@ func TestFileVersionStore(t *testing.T) {
 		AstHash:  "hash1",
 		IsLatest: true,
 	}
-	err := fvStore.InsertVersion(ctx, fv1)
+	err := fvStore.InsertVersion(ctx, nil, fv1)
 	if err != nil {
 		t.Fatalf("failed to insert version: %v", err)
 	}
@@ -74,10 +74,10 @@ func TestFileVersionStore(t *testing.T) {
 		AstHash:  "hash2",
 		IsLatest: false,
 	}
-	_ = fvStore.InsertVersion(ctx, fv2)
+	_ = fvStore.InsertVersion(ctx, nil, fv2)
 
 	// Test Atomic swap
-	err = fvStore.SetLatest(ctx, fv2.ID, fv1.ID)
+	err = fvStore.SetLatest(ctx, nil, fv2.ID, fv1.ID)
 	if err != nil {
 		t.Fatalf("failed to set latest: %v", err)
 	}

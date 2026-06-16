@@ -18,8 +18,8 @@ import (
 	"github.com/andrejsstepanovs/prowiki/internal/prompt"
 	"github.com/andrejsstepanovs/prowiki/internal/queue"
 	"github.com/andrejsstepanovs/prowiki/internal/scanner"
+	"github.com/andrejsstepanovs/prowiki/internal/app/ingest"
 	"github.com/andrejsstepanovs/prowiki/internal/store"
-	"github.com/andrejsstepanovs/prowiki/internal/versioning"
 	"github.com/andrejsstepanovs/prowiki/internal/worker"
 
 	go_litellm "github.com/andrejsstepanovs/go-litellm/client"
@@ -29,7 +29,7 @@ import (
 type Container struct {
 	DB               *sql.DB
 	Completer        domain.Completer
-	IngestionService *versioning.IngestionService
+	IngestionService *ingest.Service
 	Daemon           *worker.Daemon
 	Server           *api.Server
 	Project          *domain.Project
@@ -85,7 +85,7 @@ func NewContainer(ctx context.Context, projectRoot string) (*Container, error) {
 	walker := scanner.NewDefaultWalker()
 	parser := ast.NewHeuristicParser()
 
-	ingestionService := versioning.NewIngestionService(database, walker, parser, fStore, vStore, jStore, project.ID, projectRoot)
+	ingestionService := ingest.NewService(database, walker, parser, fStore, vStore, jStore, project.ID, projectRoot)
 
 	registry := prompt.NewHardcodedRegistry()
 	parseHandler := handlers.NewParseHandler(completer, registry, vStore, featStore, jStore)

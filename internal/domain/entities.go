@@ -3,10 +3,11 @@ package domain
 import "time"
 
 type Project struct {
-	ID        int64     `json:"id"`
-	Name      string    `json:"name"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID         int64     `json:"id"`
+	Name       string    `json:"name"`
+	FSLocation string    `json:"fs_location"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
 }
 
 type Folder struct {
@@ -81,6 +82,7 @@ type Job struct {
 	Status     JobStatus `json:"status"`
 	Priority   int       `json:"priority"`
 	RetryCount int       `json:"retry_count"`
+	Payload    string    `json:"payload"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
 }
@@ -103,12 +105,17 @@ type FeatureInteraction struct {
 }
 
 type MacroPipeline struct {
-	ID          int64     `json:"id"`
-	ProjectID   int64     `json:"project_id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID           int64     `json:"id"`
+	ProjectID    int64     `json:"project_id"`
+	NodeSequence string    `json:"node_sequence"` // JSON array of feature IDs forming the pipeline
+	Description  string    `json:"description"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+type FeaturePair struct {
+	FeatureA Feature
+	FeatureB Feature
 }
 
 type ApiEndpoint struct {

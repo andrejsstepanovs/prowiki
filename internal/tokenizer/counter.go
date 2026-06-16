@@ -16,14 +16,14 @@ func (c *HeuristicCounter) Count(text string) (int, error) {
 }
 
 // CountMessages estimates tokens for an array of messages, adding standard overhead.
-func (c *HeuristicCounter) CountMessages(msgs []domain.Message) int {
+func (c *HeuristicCounter) CountMessages(msgs []domain.Message) (int, error) {
 	total := 0
 	for _, m := range msgs {
 		total += len(m.Content) / 4
 		total += 4 // overhead per message
 	}
 	total += 3 // base overhead for the prompt
-	return total
+	return total, nil
 }
 
 // FakeCounter is a deterministic counter for testing upstream components.
@@ -39,9 +39,9 @@ func (f *FakeCounter) Count(text string) (int, error) {
 	return 0, nil
 }
 
-func (f *FakeCounter) CountMessages(msgs []domain.Message) int {
+func (f *FakeCounter) CountMessages(msgs []domain.Message) (int, error) {
 	if f.CountMessagesFunc != nil {
-		return f.CountMessagesFunc(msgs)
+		return f.CountMessagesFunc(msgs), nil
 	}
-	return 0
+	return 0, nil
 }

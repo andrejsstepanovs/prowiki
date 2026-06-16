@@ -36,7 +36,7 @@ func TestFeatureStore(t *testing.T) {
 	file := &domain.File{ProjectID: p.ID, Path: "main.go"}
 	_ = fileStore.Create(ctx, file)
 	fv := &domain.FileVersion{FileID: file.ID, AstHash: "xyz", IsLatest: true}
-	_ = fvStore.InsertVersion(ctx, fv)
+	err = fvStore.InsertVersion(ctx, nil, fv)
 
 	err = featureStore.AddToFileVersion(ctx, fv.ID, f.ID)
 	if err != nil {
